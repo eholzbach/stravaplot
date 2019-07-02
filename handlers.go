@@ -1,16 +1,17 @@
 package main
 
 import (
-	"fmt"
 	"github.com/strava/go.strava"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
 type renderData struct {
 	Coordinates string
+	Location    string
 	Poly        []strava.Polyline
 }
 
@@ -18,7 +19,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, config Config, location 
 	data := renderData{}
 	var date string
 
-	// set the start date
+	// select location and date
 	switch location {
 	case "seattle":
 		date = "2016-03-01"
@@ -27,15 +28,16 @@ func renderPage(w http.ResponseWriter, r *http.Request, config Config, location 
 		current := time.Now().Local()
 		date = current.Format("2006-01-02")
 		data.Coordinates = "47.6332745,-122.3235537"
+		data.Location = "seattle"
 	}
 
+	// set date
 	sd, err := time.Parse("2006-1-2", date)
 	if err != nil {
-		log.Println("error parsing timestamp: %s", err)
+		log.Print("error parsing timestamp: %s\n", err)
 		return
 	}
-
-	t := sd.Unix()
+	timestamp := sd.Unix()
 
 	// build strava api client
 	client := strava.NewClient(config.Accesstoken)
@@ -43,7 +45,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, config Config, location 
 	service := strava.NewActivitiesService(client)
 
 	// get list of activities
-	activities, err := athlete.ListActivities().After(int(t)).Do()
+	activities, err := athlete.ListActivities().After(int(timestamp)).Do()
 
 	for _, v := range activities {
 		if len(v.Map.SummaryPolyline) > 0 {
@@ -54,12 +56,48 @@ func renderPage(w http.ResponseWriter, r *http.Request, config Config, location 
 	}
 
 	if err != nil {
-		log.Print("error getting list of activities: %s", err)
+		log.Print("error getting list of activities: %s\n", err)
 		return
 	}
 
-	// render template to file
-	tpl, _ := template.ParseFiles("seattle.tpl")
+	// build config
+	a := renderData{
+		Coordinates: data.Coordinates,
+		Poly:        data.Poly,
+	}
 
-	fmt.Println(tpl)
+	// render map template
+	tpl, err := template.ParseFiles("map.tpl")
+	if err != nil {
+		log.Print("error parsing template: %s\n", err)
+		return
+	}
+
+	// open file
+	file, err := os.Create("seattle.html")
+	if err != nil {
+		log.Print("error writing to file: %s\n", err)
+		os.Exit(1)
+	}
+
+	// execute template and write to file
+	tpl.Execute(file, a)
+
+	// render data template
+	tpl, err = template.ParseFiles("js.tpl")
+	if err != nil {
+		log.Print("error parsing template: %s\n", err)
+		return
+	}
+
+	// open file
+	file, err = os.Create("seattle.js")
+	if err != nil {
+		log.Print("error writing to file: %s\n", err)
+		os.Exit(1)
+	}
+
+	// execute template and write to file
+	tpl.Execute(file, a)
+
 }
