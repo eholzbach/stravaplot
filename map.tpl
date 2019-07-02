@@ -2,7 +2,7 @@
 <html>
 <head>
 	
-	<title>old man rides</title>
+	<title>{{ .Location }}</title>
 
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,8 +11,8 @@
 
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" integrity="sha512-07I2e+7D8p6he1SIM+1twR5TIrhUQn9+I6yjqD53JQjFiMf8EtC93ty0/5vJTZGF8aAocvHYNEDJajGdNx1IsQ==" crossorigin=""/>
 	<script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js" integrity="sha512-A7vV8IFfih/D732iSSKi20u/ooOfj/AGehOKq0f4vLT1Zr2Y+RX7C+w8A1gaSasGtRUZpF/NZgzSAu4/Gc41Lg==" crossorigin=""></script>
-	<script src="https://raw.githubusercontent.com/jieter/Leaflet.encoded/68e781908783fb12236fc7d8d90d71d785f892e9/Polyline.encoded.js" integrity="IxcXX9OwJ72ucNMR833ngaxl3HIXfrm1ZdnHJFpXOhJeLNLfkM/q0iL6lGVt8Xt4yl124ybQn+F/6L+ZmH57kg==" crossorigin=""></script>
-        <script type="text/javascript" src="./{{ .Location }}js"></script>
+	<script src="https://raw.githubusercontent.com/jieter/Leaflet.encoded/68e781908783fb12236fc7d8d90d71d785f892e9/Polyline.encoded.js" integrity="sha512-IxcXX9OwJ72ucNMR833ngaxl3HIXfrm1ZdnHJFpXOhJeLNLfkM/q0iL6lGVt8Xt4yl124ybQn+F/6L+ZmH57kg==" crossorigin=""></script>
+        <script type="text/javascript" src="./{{ .Location }}.js"></script>
 	<style>
 	body {
 		padding: 0;

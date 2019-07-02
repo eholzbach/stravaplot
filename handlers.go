@@ -63,6 +63,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, config Config, location 
 	// build config
 	a := renderData{
 		Coordinates: data.Coordinates,
+		Location:    location,
 		Poly:        data.Poly,
 	}
 
