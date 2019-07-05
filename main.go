@@ -36,7 +36,7 @@ func main() {
 	})
 
 	// set display handers
-	//	mux.Handle("/seattle", seattle)
+	mux.Handle("/rides/", http.StripPrefix("/rides/", http.FileServer(http.Dir("./static"))))
 
 	http.ListenAndServe("0.0.0.0:8000", logRequest(mux))
 }
