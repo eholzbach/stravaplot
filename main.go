@@ -31,6 +31,14 @@ func main() {
 
 	// set rendering handlers
 	mux := http.NewServeMux()
+	mux.HandleFunc("/v1/losangeles", func(w http.ResponseWriter, r *http.Request) {
+		renderPage(w, r, config, "losangeles")
+	})
+
+	mux.HandleFunc("/v1/sanfrancisco", func(w http.ResponseWriter, r *http.Request) {
+		renderPage(w, r, config, "sanfrancisco")
+	})
+
 	mux.HandleFunc("/v1/seattle", func(w http.ResponseWriter, r *http.Request) {
 		renderPage(w, r, config, "seattle")
 	})

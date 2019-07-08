@@ -14,6 +14,7 @@ type renderData struct {
 	Coordinates template.JS
 	Location    string
 	Poly        []strava.Polyline
+	Zoom        string
 }
 
 func renderPage(w http.ResponseWriter, r *http.Request, config Config, location string) {
@@ -22,13 +23,22 @@ func renderPage(w http.ResponseWriter, r *http.Request, config Config, location 
 
 	// select location and date
 	switch location {
+	case "losangeles":
+		date = "2011-06-13"
+		data.Coordinates = "34.1000, -118.3800"
+		data.Zoom = "12"
+	case "sanfrancisco":
+		date = "2012-04-07"
+		data.Coordinates = "37.8150, -122.4400"
+		data.Zoom = "12"
 	case "seattle":
 		date = "2016-04-09"
-		data.Coordinates = "47.6332745,-122.3235537"
+		data.Coordinates = "47.5800, -122.3000"
+		data.Zoom = "11"
 	default:
 		current := time.Now().Local()
 		date = current.Format("2006-01-02")
-		data.Coordinates = "47.6332745,-122.3235537"
+		data.Coordinates = "47.5800,-122.3000"
 		data.Location = "seattle"
 	}
 
@@ -65,6 +75,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, config Config, location 
 		Coordinates: data.Coordinates,
 		Location:    location,
 		Poly:        data.Poly,
+		Zoom:        data.Zoom,
 	}
 
 	// render map template
@@ -79,7 +90,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, config Config, location 
 	file, err := os.Create(filename)
 	if err != nil {
 		log.Print("error writing to file: %s\n", err)
-		os.Exit(1)
+		return
 	}
 
 	// execute template and write to file

@@ -27,9 +27,12 @@
 
 <div id="map" ></div>
 <script>
-	var map = L.map('map').setView([{{ .Coordinates }}], 11);
-		L.titleLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-			maxZoom: 18,
+	var map = L.map('map').setView([{{ .Coordinates }}], {{ .Zoom }});
+		L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+			attribution:'&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+			subdomains: 'abcd',
+			maxZoom: 20,
+			minZoom: 0
 	}).addTo(map);
 
 	var encodedRoutes = [
@@ -45,9 +48,8 @@
 			coordinates,
 			{
 				color: 'white',
-				weight: .6,
-				opacity: .7,
-				lineJoin: 'round'
+				weight: 1,
+				opacity: .7
 			}
 		).addTo(map);
 	}
