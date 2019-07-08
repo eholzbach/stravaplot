@@ -28,7 +28,7 @@
 <div id="map" ></div>
 <script>
 	var map = L.map('map').setView([{{ .Coordinates }}], 11);
-		L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+		L.titleLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
 			maxZoom: 18,
 	}).addTo(map);
 
@@ -44,8 +44,8 @@
 		L.polyline(
 			coordinates,
 			{
-				color: 'blue',
-				weight: 2,
+				color: 'white',
+				weight: .6,
 				opacity: .7,
 				lineJoin: 'round'
 			}
