@@ -26,24 +26,24 @@ func main() {
 	// read configuration
 	config, err := getConfig()
 	if err != nil {
+		log.Print("error reading configuration: ", err)
 		os.Exit(1)
 	}
 
-	// set rendering handlers
+	// connect to db
+	db, err := connectDB()
+	if err != nil {
+		log.Print("error connecting to db: ", err)
+		os.Exit(1)
+	}
+
+	// set rendering handler
 	mux := http.NewServeMux()
-	mux.HandleFunc("/v1/losangeles", func(w http.ResponseWriter, r *http.Request) {
-		renderPage(w, r, config, "losangeles")
+	mux.HandleFunc("/v1/render", func(w http.ResponseWriter, r *http.Request) {
+		renderPage(w, r, config, db)
 	})
 
-	mux.HandleFunc("/v1/sanfrancisco", func(w http.ResponseWriter, r *http.Request) {
-		renderPage(w, r, config, "sanfrancisco")
-	})
-
-	mux.HandleFunc("/v1/seattle", func(w http.ResponseWriter, r *http.Request) {
-		renderPage(w, r, config, "seattle")
-	})
-
-	// set display handers
+	// set display handler
 	mux.Handle("/rides/", http.StripPrefix("/rides/", http.FileServer(http.Dir("./static"))))
 
 	http.ListenAndServe("0.0.0.0:8000", logRequest(mux))
