@@ -5,19 +5,19 @@ import (
 	"time"
 )
 
-func TestDB(t *testing.T) {
-	// create db
-	db, err := connectDB(":memory:")
+func TestConnectDB(t *testing.T) {
+	// connect db
+	_, err := connectDB(":memory:")
 	if err != nil {
 		t.Errorf("Connection to db failed, got: %s", err)
 	}
+}
 
-	c := Config{
-		Accesstoken: "1234567890123456789012345678901234567890",
-		Athleteid:   "123123",
-		Coordinates: "47.5800, -122.3000",
-		Location:    "Seattle",
-		Zoom:        "11",
+func TestGetPolylines(t *testing.T) {
+	// connect db
+	db, err := connectDB(":memory:")
+	if err != nil {
+		t.Errorf("Connection to db failed, got: %s", err)
 	}
 
 	// write a row
@@ -34,6 +34,14 @@ func TestDB(t *testing.T) {
 	}
 
 	// get polylines
+	c := Config{
+		Accesstoken: "1234567890123456789012345678901234567890",
+		Athleteid:   "123123",
+		Coordinates: "47.5800, -122.3000",
+		Location:    "Seattle",
+		Zoom:        "11",
+	}
+
 	pl, err := getPolylines(c, db)
 	if err != nil {
 		t.Errorf("Error reading polylines from db, got: %s", err)
