@@ -5,21 +5,12 @@ import (
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/strava/go.strava"
-	"os"
 	"time"
 )
 
-func connectDB() (*sql.DB, error) {
-	// get user home
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-
+func connectDB(dbpath string) (*sql.DB, error) {
 	// open db
-	file := home + "/" + ".stravaplot.db"
-
-	db, err := sql.Open("sqlite3", file)
+	db, err := sql.Open("sqlite3", dbpath)
 	if err != nil {
 		return nil, err
 	}
