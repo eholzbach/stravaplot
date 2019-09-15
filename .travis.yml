@@ -1,0 +1,10 @@
+language: go
+
+go_import_path: github.com/eholzbach/stravaplot
+
+os:
+  - linux
+  - osx
+
+script:
+  - diff -u <(echo -n) <(gofmt -d .)
