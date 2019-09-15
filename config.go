@@ -15,17 +15,11 @@ type Config struct {
 	Zoom        string
 }
 
-func getConfig() (Config, error) {
+func getConfig(cpath string) (Config, error) {
 	c := Config{}
 
-	// get user home
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return c, err
-	}
-
 	// open config file
-	file, err := os.Open(home + "/" + ".stravaplot.json")
+	file, err := os.Open(cpath)
 	if err != nil {
 		return c, err
 	}

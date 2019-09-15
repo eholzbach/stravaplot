@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"log/syslog"
 	"net/http"
@@ -24,14 +25,18 @@ func main() {
 	log.Print("starting...")
 
 	// read configuration
-	config, err := getConfig()
+	cpath := flag.String("config", "stravaplot.json", "configuration file")
+	dbpath := flag.String("db", "stravaplot.db", "sqlite3 db")
+	flag.Parse()
+
+	config, err := getConfig(*cpath)
 	if err != nil {
 		log.Print("error reading configuration: ", err)
 		os.Exit(1)
 	}
 
 	// connect to db
-	db, err := connectDB()
+	db, err := connectDB(*dbpath)
 	if err != nil {
 		log.Print("error connecting to db: ", err)
 		os.Exit(1)
