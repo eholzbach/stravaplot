@@ -3,32 +3,30 @@ package main
 
 import (
 	"encoding/json"
-	"log"
+	"html/template"
 	"os"
 )
 
 type Config struct {
-	Accesstoken string `json:"accesstoken"`
-	Activityid  string `json:"activityid"`
-	Athleteid   string `json:"athleteid"`
+	Accesstoken string
+	Athleteid   string
+	Coordinates template.JS
+	Location    string
+	Zoom        string
 }
 
 func getConfig() (Config, error) {
-
 	c := Config{}
 
 	// get user home
 	home, err := os.UserHomeDir()
 	if err != nil {
-		log.Print(err)
 		return c, err
 	}
 
 	// open config file
 	file, err := os.Open(home + "/" + ".stravaplot.json")
 	if err != nil {
-		log.Print(err)
-		log.Print("error reading configuration file, exiting...")
 		return c, err
 	}
 
@@ -38,8 +36,6 @@ func getConfig() (Config, error) {
 	d := json.NewDecoder(file)
 	err = d.Decode(&c)
 	if err != nil {
-		log.Print(err)
-		log.Print("error parsing configuration file, exiting...")
 		return c, err
 	}
 
