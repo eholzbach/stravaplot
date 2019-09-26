@@ -26,7 +26,6 @@ func main() {
 
 	// read configuration
 	cpath := flag.String("config", "stravaplot.json", "configuration file")
-	dbpath := flag.String("db", "stravaplot.db", "sqlite3 db")
 	flag.Parse()
 
 	config, err := getConfig(*cpath)
@@ -36,7 +35,7 @@ func main() {
 	}
 
 	// connect to db
-	db, err := connectDB(*dbpath)
+	db, err := connectDB(config.Database)
 	if err != nil {
 		log.Print("error connecting to db: ", err)
 		os.Exit(1)

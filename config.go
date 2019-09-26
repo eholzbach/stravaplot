@@ -10,7 +10,9 @@ import (
 type Config struct {
 	Accesstoken string
 	Athleteid   string
+	Bind        string
 	Coordinates template.JS
+	Database    string
 	Location    string
 	Zoom        string
 }

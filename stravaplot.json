@@ -1,7 +1,9 @@
 {
 	"athleteid": "123123",
 	"accesstoken": "1234567890123456789012345678901234567890",
+	"bind": "127.0.0.1",
 	"coordinates": "47.5800, -122.3000",
+	"database": "/var/db/stravaplot/stravaplot.db",
 	"location": "Seattle",
 	"zoom": "11"
 }
