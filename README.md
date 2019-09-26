@@ -13,7 +13,9 @@ Stravaplot's configuration file is in json.
 {
         "athleteid": "123123",
         "accesstoken": "1234567890123456789012345678901234567890",
+        "bind": "127.0.0.1",
         "coordinates": "47.5800, -122.3000",
+        "database": "/var/db/stravaplot/stravaplot.db",
         "location": "Seattle",
         "zoom": "11"
 }
@@ -22,8 +24,6 @@ Stravaplot's configuration file is in json.
 ### Parameters
 
   **-config** configuration file (default "stravaplot.json")
-
-  **-db** sqlite3 db (default "stravaplot.db")
 
 ## Endpoints
 ### /v1/render

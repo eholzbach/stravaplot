@@ -14,15 +14,27 @@ func TestGetConfig(t *testing.T) {
 	if a.Accesstoken != "1234567890123456789012345678901234567890" {
 		t.Errorf("Accesstoken incorrect, got: %s, want: %s", a.Accesstoken, "1234567890123456789012345678901234567890")
 	}
+
 	if a.Athleteid != "123123" {
 		t.Errorf("Athleteid incorrect, got: %s, want: %s", a.Athleteid, "123123")
 	}
+
+	if a.Bind != "127.0.0.1" {
+		t.Errorf("Bind address incorrect, got %s, want %s", a.Bind, "127.0.0.1")
+	}
+
 	if a.Coordinates != "47.5800, -122.3000" {
 		t.Errorf("Coordinates incorrect, got: %s, want: %s", a.Coordinates, "47.5800, -122.3000")
 	}
+
+	if a.Database != "/var/db/stravaplot/stravaplot.db" {
+		t.Errorf("Database location incorrect, got %s, want %s", a.Database, "/var/db/stravaplot/stravaplot.db")
+	}
+
 	if a.Location != "Seattle" {
 		t.Errorf("Location incorrect, got: %s, want: %s", a.Location, "Seattle")
 	}
+
 	if a.Zoom != "11" {
 		t.Errorf("Zoom incorrect, got: %s, want: %s", a.Zoom, "11")
 	}
