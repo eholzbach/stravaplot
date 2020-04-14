@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"log"
-	"log/syslog"
 	"net/http"
 	"os"
 )
@@ -16,12 +15,6 @@ func logRequest(h http.Handler) http.Handler {
 }
 
 func main() {
-	// set up syslog
-	logwriter, err := syslog.New(syslog.LOG_NOTICE, "stravaplot")
-	if err == nil {
-		log.SetOutput(logwriter)
-	}
-
 	log.Print("starting...")
 
 	// read configuration

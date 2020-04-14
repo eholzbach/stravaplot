@@ -6,7 +6,7 @@ Ride bicycles. Use [Strava](https://www.strava.com). Collect polylines.
 ![Example](example/sea.jpg?raw=true "Seattle")
 
 ## Configuration
-Create a [Strava API token](https://developers.strava.com/docs/getting-started/#account). Grab your `athleteid` with `curl -s -H 'Authorization: Bearer <yourapitoken>' 'https://www.strava.com/api/v3/athlete' | jq .id`
+Create a [Strava API token](https://developers.strava.com/docs/getting-started/#account). Follow [the instructions to authenticate with oauth](https://developers.strava.com/docs/getting-started/#oauth) but expand the scope of the token fto `read,activity:read`. Grab your `athleteid` with `curl -s -H 'Authorization: Bearer <yourapitoken>' 'https://www.strava.com/api/v3/athlete' | jq .id`
 
 Stravaplot's configuration file is in json.
 ```
