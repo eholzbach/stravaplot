@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"html/template"
@@ -16,9 +17,9 @@ type renderData struct {
 	Zoom        string
 }
 
-func renderPage(w http.ResponseWriter, r *http.Request, config Config, db *sql.DB) {
+func renderPage(oauth context.Context, w http.ResponseWriter, r *http.Request, config Config, db *sql.DB) {
 	// update db with latest info
-	err := updateDB(config, db)
+	err := updateDB(oauth, config, db)
 	if err != nil {
 		log.Print("error updating db: ", err)
 		return
@@ -46,7 +47,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, config Config, db *sql.D
 	}
 
 	// open file
-	filename := fmt.Sprintf("static/strava.html")
+	filename := fmt.Sprintf("static/index.html")
 	file, err := os.Create(filename)
 	if err != nil {
 		log.Print("error writing to file: ", err)
