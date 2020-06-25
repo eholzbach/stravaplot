@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"html/template"
@@ -16,9 +17,10 @@ type renderData struct {
 	Zoom        string
 }
 
-func renderPage(w http.ResponseWriter, r *http.Request, config Config, db *sql.DB) {
+// renderPage polls strava for new data, updates the local database, and writes a freshly populated static html file for the display handler to server
+func renderPage(oauth context.Context, w http.ResponseWriter, r *http.Request, config Config, db *sql.DB) {
 	// update db with latest info
-	err := updateDB(config, db)
+	err := updateDB(oauth, config, db)
 	if err != nil {
 		log.Print("error updating db: ", err)
 		return
@@ -46,7 +48,7 @@ func renderPage(w http.ResponseWriter, r *http.Request, config Config, db *sql.D
 	}
 
 	// open file
-	filename := fmt.Sprintf("static/strava.html")
+	filename := fmt.Sprintf("static/index.html")
 	file, err := os.Create(filename)
 	if err != nil {
 		log.Print("error writing to file: ", err)
@@ -55,4 +57,12 @@ func renderPage(w http.ResponseWriter, r *http.Request, config Config, db *sql.D
 
 	// execute template and write to file
 	tpl.Execute(file, data)
+}
+
+// logRequest captures http requests and prints them to stdout
+func logRequest(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+		h.ServeHTTP(w, r)
+	})
 }

@@ -7,16 +7,18 @@ import (
 	"os"
 )
 
+// Config is user configuration read from file
 type Config struct {
-	Accesstoken string
-	Athleteid   string
-	Bind        string
-	Coordinates template.JS
-	Database    string
-	Location    string
-	Zoom        string
+	Bind         string
+	ClientID     string
+	ClientSecret string
+	Coordinates  template.JS
+	Database     string
+	Location     string
+	Zoom         string
 }
 
+// getConfig reads a json configuration file and returns type Config
 func getConfig(cpath string) (Config, error) {
 	c := Config{}
 

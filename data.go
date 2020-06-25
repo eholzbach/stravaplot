@@ -1,13 +1,18 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/strava/go.strava"
 	"time"
+
+	"github.com/antihax/optional"
+	"github.com/eholzbach/strava"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
+// connectDB creates a connection to sqlite db, creates the table if it does not exist, and returns type DB
 func connectDB(dbpath string) (*sql.DB, error) {
 	// open db
 	db, err := sql.Open("sqlite3", dbpath)
@@ -16,7 +21,7 @@ func connectDB(dbpath string) (*sql.DB, error) {
 	}
 
 	// create table if it doesn't exist
-	statement, err := db.Prepare("CREATE TABLE IF NOT EXISTS sp (ID INTEGER PRIMARY KEY, Name VARCHAR, Distance FLOAT, MovingTime INT, ElapsedTime INT, TotalElevationGain FLOAT, Type VARCHAR, StravaID INT UNIQUE, StartDate DATETIME, StartDateLocal DATETIME, TimeZone VARCHAR, City VARCHAR, State VARCHAR, Country VARCHAR, MapId VARCHAR, MapPolyline VARCHAR, MapSummaryPolyline VARCHAR, AverageSpeed FLOAT, MaximunSpeed FLOAT, AveragePower FLOAT, Kilojoules FLOAT, GearId VARCHAR )")
+	statement, err := db.Prepare("CREATE TABLE IF NOT EXISTS sp (ID INTEGER PRIMARY KEY, Name VARCHAR, Distance FLOAT, MovingTime INT, ElapsedTime INT, TotalElevationGain FLOAT, Type VARCHAR, StravaID INT UNIQUE, StartDate DATETIME, StartDateLocal DATETIME, Timezone VARCHAR, MapId VARCHAR, MapPolyline VARCHAR, MapSummaryPolyline VARCHAR, AverageSpeed FLOAT, MaxSpeed FLOAT, AveragePower FLOAT, Kilojoules FLOAT, GearId VARCHAR )")
 
 	if err != nil {
 		return nil, err
@@ -27,6 +32,7 @@ func connectDB(dbpath string) (*sql.DB, error) {
 	return db, err
 }
 
+// getPolylines queries the db for polyline data and returns it in a slice of strings
 func getPolylines(config Config, db *sql.DB) ([]string, error) {
 	var data []string
 
@@ -51,7 +57,8 @@ func getPolylines(config Config, db *sql.DB) ([]string, error) {
 	return data, err
 }
 
-func updateDB(config Config, db *sql.DB) (err error) {
+// updateDB checks for new strava data and writes it into the database
+func updateDB(oauth context.Context, config Config, db *sql.DB) (err error) {
 	// get time of most recent activity in db
 	row, err := db.Query("SELECT StartDate FROM sp ORDER BY ID DESC LIMIT 1;")
 	if err != nil {
@@ -76,12 +83,15 @@ func updateDB(config Config, db *sql.DB) (err error) {
 	timestamp := int(ts.Unix())
 
 	// build strava api client
-	client := strava.NewClient(config.Accesstoken)
-	athlete := strava.NewCurrentAthleteService(client)
-	service := strava.NewActivitiesService(client)
+	client := strava.NewAPIClient(strava.NewConfiguration())
 
 	// get new activities from strava
-	activities, err := athlete.ListActivities().PerPage(200).After(timestamp).Do()
+	opts := &strava.GetLoggedInAthleteActivitiesOpts{
+		PerPage: optional.NewInt32(200),
+		After:   optional.NewInt32(int32(timestamp)),
+	}
+
+	activities, _, err := client.ActivitiesApi.GetLoggedInAthleteActivities(oauth, opts)
 
 	if err != nil {
 		fmt.Println(err)
@@ -91,20 +101,23 @@ func updateDB(config Config, db *sql.DB) (err error) {
 	// write new activities to db
 	for _, v := range activities {
 		// only bicycles, only if gps data
-		if v.Type == "Ride" && len(v.Map.SummaryPolyline) > 0 {
+		if *v.Type_ == "Ride" && len(v.Map_.SummaryPolyline) > 0 {
 			// get full activity
-			a, err := service.Get(v.Id).IncludeAllEfforts().Do()
+			opts := &strava.GetActivityByIdOpts{
+				IncludeAllEfforts: optional.NewBool(true),
+			}
+			a, _, err := client.ActivitiesApi.GetActivityById(oauth, v.Id, opts)
 			if err != nil {
 				return err
 			}
 
-			statement, err := db.Prepare("INSERT OR IGNORE INTO sp (Name, Distance, MovingTime, ElapsedTime, TotalElevationGain, Type, StravaID, StartDate, StartDateLocal, TimeZone, City, State, Country, MapId, MapPolyline, MapSummaryPolyline, AverageSpeed, MaximunSpeed, AveragePower, Kilojoules, GearId) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+			statement, err := db.Prepare("INSERT OR IGNORE INTO sp (Name, Distance, MovingTime, ElapsedTime, TotalElevationGain, Type, StravaID, StartDate, StartDateLocal, Timezone, MapId, MapPolyline, MapSummaryPolyline, AverageSpeed, MaxSpeed, Kilojoules, GearId) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 
 			if err != nil {
 				return err
 			}
 
-			_, err = statement.Exec(a.Name, a.Distance, a.MovingTime, a.ElapsedTime, a.TotalElevationGain, a.Type, a.Id, a.StartDate, a.StartDateLocal, a.TimeZone, a.City, a.State, a.Country, a.Map.Id, a.Map.Polyline, a.Map.SummaryPolyline, a.AverageSpeed, a.MaximunSpeed, a.AveragePower, a.Kilojoules, a.GearId)
+			_, err = statement.Exec(a.Name, a.Distance, a.MovingTime, a.ElapsedTime, a.TotalElevationGain, a.Type_, a.Id, a.StartDate, a.StartDateLocal, a.Timezone, a.Map_.Id, a.Map_.Polyline, a.Map_.SummaryPolyline, a.AverageSpeed, a.MaxSpeed, a.Kilojoules, a.GearId)
 
 			if err != nil {
 				return err
