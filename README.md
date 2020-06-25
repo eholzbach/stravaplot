@@ -5,14 +5,17 @@ Ride bicycles. Use [Strava](https://www.strava.com). Collect polylines.
 
 ![Example](example/sea.jpg?raw=true "Seattle")
 
+## Usage
+Start the service, then make a request to `curl localhost:8000/v1/render` and allow it time to query Strava. This doesn't respect pagination yet, so you may need to do this a few times until the db is fully populated. Fire up a browser and view the map at `http://localhost:8000/`
+
 ## Configuration
-Create a [Strava API token](https://developers.strava.com/docs/getting-started/#account). Follow [the instructions to authenticate with oauth](https://developers.strava.com/docs/getting-started/#oauth) but expand the scope of the token fto `read,activity:read`. Grab your `athleteid` with `curl -s -H 'Authorization: Bearer <yourapitoken>' 'https://www.strava.com/api/v3/athlete' | jq .id`
+This is in flight as Strava killed application tokens in favor of [oauth](https://developers.strava.com/docs/getting-started/#oauth) years ago. You can find your client secret and id in Strava's settings.
 
 Stravaplot's configuration file is in json.
 ```
 {
-        "athleteid": "123123",
-        "accesstoken": "1234567890123456789012345678901234567890",
+        "clientid": "123123",
+        "clientsecret": "1234567890123456789012345678901234567890",
         "bind": "127.0.0.1",
         "coordinates": "47.5800, -122.3000",
         "database": "/var/db/stravaplot/stravaplot.db",
@@ -31,7 +34,7 @@ Stravaplot's configuration file is in json.
  - Response: 200
  - Function: Updates the database and renders a new map page
 
-### /rides/strava.html
+### /
   - Methods: GET
   - Response: 200
   - Function: Serves the rendered map from a static file

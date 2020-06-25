@@ -12,6 +12,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// connectDB creates a connection to sqlite db, creates the table if it does not exist, and returns type DB
 func connectDB(dbpath string) (*sql.DB, error) {
 	// open db
 	db, err := sql.Open("sqlite3", dbpath)
@@ -31,6 +32,7 @@ func connectDB(dbpath string) (*sql.DB, error) {
 	return db, err
 }
 
+// getPolylines queries the db for polyline data and returns it in a slice of strings
 func getPolylines(config Config, db *sql.DB) ([]string, error) {
 	var data []string
 
@@ -55,6 +57,7 @@ func getPolylines(config Config, db *sql.DB) ([]string, error) {
 	return data, err
 }
 
+// updateDB checks for new strava data and writes it into the database
 func updateDB(oauth context.Context, config Config, db *sql.DB) (err error) {
 	// get time of most recent activity in db
 	row, err := db.Query("SELECT StartDate FROM sp ORDER BY ID DESC LIMIT 1;")

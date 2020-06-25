@@ -17,6 +17,7 @@ type renderData struct {
 	Zoom        string
 }
 
+// renderPage polls strava for new data, updates the local database, and writes a freshly populated static html file for the display handler to server
 func renderPage(oauth context.Context, w http.ResponseWriter, r *http.Request, config Config, db *sql.DB) {
 	// update db with latest info
 	err := updateDB(oauth, config, db)
@@ -56,4 +57,12 @@ func renderPage(oauth context.Context, w http.ResponseWriter, r *http.Request, c
 
 	// execute template and write to file
 	tpl.Execute(file, data)
+}
+
+// logRequest captures http requests and prints them to stdout
+func logRequest(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+		h.ServeHTTP(w, r)
+	})
 }

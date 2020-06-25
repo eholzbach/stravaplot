@@ -19,6 +19,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// Oauth2 is mostly copypasta from github.com/srabraham/strava-oauth-helper
+
+// auth authenticates to strava with oauth2
 func auth(parentCtx context.Context, oauth2ContextType fmt.Stringer, id string, secret string) (context.Context, error) {
 	c := &oauth2.Config{
 		ClientID:     id,
@@ -35,6 +38,7 @@ func auth(parentCtx context.Context, oauth2ContextType fmt.Stringer, id string, 
 	return oauthCtx, nil
 }
 
+// osUserCacheDir creates directory to store oauth token data
 func osUserCacheDir() string {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
@@ -56,6 +60,7 @@ func tokenCacheFile(config *oauth2.Config) string {
 	return filepath.Join(osUserCacheDir(), url.QueryEscape(fn))
 }
 
+// tokenFromFile reads oauth2 token from file
 func tokenFromFile(file string) (*oauth2.Token, error) {
 	f, err := os.Open(file)
 	if err != nil {
@@ -66,6 +71,7 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 	return t, err
 }
 
+// saveToken saves oauth2 token to file
 func saveToken(file string, token *oauth2.Token) {
 	f, err := os.Create(file)
 	if err != nil {
@@ -76,6 +82,7 @@ func saveToken(file string, token *oauth2.Token) {
 	gob.NewEncoder(f).Encode(token)
 }
 
+// getOAuthToken fetches an oauth2 token from cache
 func getOAuthToken(ctx context.Context, config *oauth2.Config) *oauth2.Token {
 	cacheFile := tokenCacheFile(config)
 	token, err := tokenFromFile(cacheFile)
@@ -89,6 +96,7 @@ func getOAuthToken(ctx context.Context, config *oauth2.Config) *oauth2.Token {
 	return token
 }
 
+// tokenFromWeb fetches a new token
 func tokenFromWeb(ctx context.Context, config *oauth2.Config) *oauth2.Token {
 	ch := make(chan string)
 	randState := fmt.Sprintf("st%d", time.Now().UnixNano())
@@ -127,6 +135,7 @@ func tokenFromWeb(ctx context.Context, config *oauth2.Config) *oauth2.Token {
 	return token
 }
 
+// openURL uses xdg-utils to spawn a browser window for the user to approve oauth2
 func openURL(url string) {
 	try := []string{"xdg-open", "google-chrome", "open"}
 	for _, bin := range try {

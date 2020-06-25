@@ -10,13 +10,6 @@ import (
 	strava "github.com/eholzbach/strava"
 )
 
-func logRequest(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
-		h.ServeHTTP(w, r)
-	})
-}
-
 func main() {
 	log.Print("starting...")
 
