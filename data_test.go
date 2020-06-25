@@ -21,13 +21,13 @@ func TestGetPolylines(t *testing.T) {
 	}
 
 	// write a row
-	statement, err := db.Prepare("INSERT OR IGNORE INTO sp (Name, Distance, MovingTime, ElapsedTime, TotalElevationGain, Type, StravaID, StartDate, StartDateLocal, TimeZone, City, State, Country, MapId, MapPolyline, MapSummaryPolyline, AverageSpeed, MaximunSpeed, AveragePower, Kilojoules, GearId) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	statement, err := db.Prepare("INSERT OR IGNORE INTO sp (Name, Distance, MovingTime, ElapsedTime, TotalElevationGain, Type, StravaID, StartDate, StartDateLocal, Timezone, MapId, MapPolyline, MapSummaryPolyline, AverageSpeed, MaxSpeed, Kilojoules, GearId) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 
 	if err != nil {
 		t.Errorf("Preparing sql statement failed, got: %s", err)
 	}
 
-	_, err = statement.Exec("testing", "1234.0", "1234", "1234", "1234.0", "Ride", "1234", time.Now(), time.Now(), "PST", "Los Angeles", "CA", "USA", "123123", "123123123123123123123123", "123123123", "10.1", "12.1", "2.0", "3.0", "space horse")
+	_, err = statement.Exec("testing", "1234.0", "1234", "1234", "1234.0", "Ride", "1234", time.Now(), time.Now(), "PST", "123123", "123123123123123123123123", "123123123", "10.1", "12.1", "3.0", "space horse")
 
 	if err != nil {
 		t.Errorf("Executing sql statement failed, got: %s", err)
@@ -35,11 +35,11 @@ func TestGetPolylines(t *testing.T) {
 
 	// get polylines
 	c := Config{
-		Accesstoken: "1234567890123456789012345678901234567890",
-		Athleteid:   "123123",
-		Coordinates: "47.5800, -122.3000",
-		Location:    "Seattle",
-		Zoom:        "11",
+		ClientSecret: "1234567890123456789012345678901234567890",
+		ClientID:     "123123",
+		Coordinates:  "47.5800, -122.3000",
+		Location:     "Seattle",
+		Zoom:         "11",
 	}
 
 	pl, err := getPolylines(c, db)

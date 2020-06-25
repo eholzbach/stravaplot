@@ -11,12 +11,12 @@ func TestGetConfig(t *testing.T) {
 		t.Errorf("Could not find configuration file: %s", err)
 	}
 
-	if a.Accesstoken != "1234567890123456789012345678901234567890" {
-		t.Errorf("Accesstoken incorrect, got: %s, want: %s", a.Accesstoken, "1234567890123456789012345678901234567890")
+	if a.ClientSecret != "1234567890123456789012345678901234567890" {
+		t.Errorf("ClientSecret incorrect, got: %s, want: %s", a.ClientSecret, "1234567890123456789012345678901234567890")
 	}
 
-	if a.Athleteid != "123123" {
-		t.Errorf("Athleteid incorrect, got: %s, want: %s", a.Athleteid, "123123")
+	if a.ClientID != "123123" {
+		t.Errorf("Clientid incorrect, got: %s, want: %s", a.ClientID, "123123")
 	}
 
 	if a.Bind != "127.0.0.1" {
