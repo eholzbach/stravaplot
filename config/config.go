@@ -1,5 +1,5 @@
 // load configuration
-package main
+package config
 
 import (
 	"encoding/json"

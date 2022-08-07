@@ -8,43 +8,48 @@ import (
 	"os"
 
 	strava "github.com/eholzbach/strava"
+	"github.com/eholzbach/strava/auth"
+	"github.com/eholzbach/strava/config"
 )
 
 func main() {
-	log.Print("starting...")
+	log.Println("starting service")
 
 	// read configuration
+	log.Println("reading configuration file")
 	cpath := flag.String("config", "stravaplot.json", "configuration file")
 	flag.Parse()
 
-	config, err := getConfig(*cpath)
+	settings, err := config.getConfig(*cpath)
 	if err != nil {
-		log.Print("error reading configuration: ", err)
+		log.Printf("error reading configuration: %s", err)
 		os.Exit(1)
 	}
 
 	// connect to db
-	db, err := connectDB(config.Database)
+	log.Println("connecting to db")
+	db, err := connectDB(settings.Database)
 	if err != nil {
-		log.Print("error connecting to db: ", err)
+		log.Printf("error connecting to db: %s", err)
 		os.Exit(1)
 	}
 
 	// authenticate
-	oauth, err := auth(context.Background(), strava.ContextOAuth2, config.ClientID, config.ClientSecret)
+	log.Println("authenticating to Strava")
+	oauth, err := auth.Auth(context.Background(), strava.ContextOAuth2, settings.ClientID, settings.ClientSecret)
 	if err != nil {
-		log.Print("error authenticating: ", err)
+		log.Printf("error authenticating: %s", err)
 		os.Exit(1)
 	}
 
-	// set rendering handler
+	// register handlers and serve
+	log.Println("starting api")
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/render", func(w http.ResponseWriter, r *http.Request) {
-		renderPage(oauth, w, r, config, db)
+		renderPage(oauth, w, r, settings, db)
 	})
 
-	// set display handler
 	mux.Handle("/", http.FileServer(http.Dir("./static")))
-
-	http.ListenAndServe("0.0.0.0:8000", logRequest(mux))
+	http.ListenAndServe(config.Bind, logRequest(mux))
 }
