@@ -1,4 +1,4 @@
-# StravaPlot [![Build Status](https://travis-ci.org/eholzbach/stravaplot.svg?branch=master)](https://travis-ci.org/eholzbach/stravaplot)
+# StravaPlot
 #### Bicycle rides over open map tiles.
 
 Ride bicycles. Use [Strava](https://www.strava.com). Collect polylines.
@@ -9,7 +9,7 @@ Ride bicycles. Use [Strava](https://www.strava.com). Collect polylines.
 Start the service, then make a request to `curl localhost:8000/v1/render` and allow it time to query Strava. This doesn't respect pagination yet, so you may need to do this a few times until the db is fully populated. Fire up a browser and view the map at `http://localhost:8000/`
 
 ## Configuration
-This is in flight as Strava killed application tokens in favor of [oauth](https://developers.strava.com/docs/getting-started/#oauth) years ago. You can find your client secret and id in Strava's settings.
+This authenticates against Strava using [oauth](https://developers.strava.com/docs/getting-started/#oauth). You can find your client secret and id in Strava's settings.
 
 Stravaplot's configuration file is in json.
 ```
