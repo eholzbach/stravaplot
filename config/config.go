@@ -1,5 +1,5 @@
 // load configuration
-package main
+package config
 
 import (
 	"encoding/json"
@@ -18,12 +18,13 @@ type Config struct {
 	Zoom         string
 }
 
-// getConfig reads a json configuration file and returns type Config
-func getConfig(cpath string) (Config, error) {
+// GetConfig reads a json configuration file and returns type Config
+func GetConfig(cpath string) (Config, error) {
 	c := Config{}
 
 	// open config file
 	file, err := os.Open(cpath)
+
 	if err != nil {
 		return c, err
 	}
@@ -32,8 +33,8 @@ func getConfig(cpath string) (Config, error) {
 
 	// decode json
 	d := json.NewDecoder(file)
-	err = d.Decode(&c)
-	if err != nil {
+
+	if err = d.Decode(&c); err != nil {
 		return c, err
 	}
 

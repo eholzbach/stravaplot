@@ -8,6 +8,8 @@ import (
 	"os"
 
 	strava "github.com/eholzbach/strava"
+	"github.com/eholzbach/stravaplot/config"
+	"github.com/eholzbach/stravaplot/data"
 )
 
 func main() {
@@ -17,14 +19,14 @@ func main() {
 	cpath := flag.String("config", "stravaplot.json", "configuration file")
 	flag.Parse()
 
-	config, err := getConfig(*cpath)
+	config, err := config.GetConfig(*cpath)
 	if err != nil {
 		log.Print("error reading configuration: ", err)
 		os.Exit(1)
 	}
 
 	// connect to db
-	db, err := connectDB(config.Database)
+	db, err := data.ConnectDB(config.Database)
 	if err != nil {
 		log.Print("error connecting to db: ", err)
 		os.Exit(1)
@@ -46,5 +48,5 @@ func main() {
 	// set display handler
 	mux.Handle("/", http.FileServer(http.Dir("./static")))
 
-	http.ListenAndServe("0.0.0.0:8000", logRequest(mux))
+	http.ListenAndServe(config.Bind, logRequest(mux))
 }
