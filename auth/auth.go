@@ -1,4 +1,4 @@
-package main
+package auth
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 // Oauth2 is mostly copypasta from github.com/srabraham/strava-oauth-helper
 
 // auth authenticates to strava with oauth2
-func auth(parentCtx context.Context, oauth2ContextType fmt.Stringer, id string, secret string) (context.Context, error) {
+func Auth(parentCtx context.Context, oauth2ContextType fmt.Stringer, id string, secret string) (context.Context, error) {
 	c := &oauth2.Config{
 		ClientID:     id,
 		ClientSecret: secret,

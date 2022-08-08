@@ -1,26 +1,26 @@
-package main
+package data
 
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/antihax/optional"
 	"github.com/eholzbach/strava"
+	"github.com/eholzbach/stravaplot/config"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// connectDB creates a connection to sqlite db, creates the table if it does not exist, and returns type DB
-func connectDB(dbpath string) (*sql.DB, error) {
-	// open db
+// ConnectDB creates a connection to sqlite db, creates the table if it does not exist, and returns type DB
+func ConnectDB(dbpath string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", dbpath)
+
 	if err != nil {
 		return nil, err
 	}
 
-	// create table if it doesn't exist
 	statement, err := db.Prepare("CREATE TABLE IF NOT EXISTS sp (ID INTEGER PRIMARY KEY, Name VARCHAR, Distance FLOAT, MovingTime INT, ElapsedTime INT, TotalElevationGain FLOAT, Type VARCHAR, StravaID INT UNIQUE, StartDate DATETIME, StartDateLocal DATETIME, Timezone VARCHAR, MapId VARCHAR, MapPolyline VARCHAR, MapSummaryPolyline VARCHAR, AverageSpeed FLOAT, MaxSpeed FLOAT, AveragePower FLOAT, Kilojoules FLOAT, GearId VARCHAR )")
 
 	if err != nil {
@@ -32,8 +32,8 @@ func connectDB(dbpath string) (*sql.DB, error) {
 	return db, err
 }
 
-// getPolylines queries the db for polyline data and returns it in a slice of strings
-func getPolylines(config Config, db *sql.DB) ([]string, error) {
+// GetPolylines queries the db for polyline data and returns it in a slice of strings
+func GetPolylines(config config.Config, db *sql.DB) ([]string, error) {
 	var data []string
 
 	// query db for all polylines
@@ -46,26 +46,30 @@ func getPolylines(config Config, db *sql.DB) ([]string, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var p string
-		err = rows.Scan(&p)
+		var a string
+		err = rows.Scan(&a)
+
 		if err != nil {
 			return data, err
 		}
-		data = append(data, p)
+
+		data = append(data, a)
 	}
 
 	return data, err
 }
 
-// updateDB checks for new strava data and writes it into the database
-func updateDB(oauth context.Context, config Config, db *sql.DB) (err error) {
-	// get time of most recent activity in db
+// UpdateDB checks for new strava data and writes it into the database
+func UpdateDB(oauth context.Context, config config.Config, db *sql.DB) (err error) {
+	log.Println("fettching most recent timestamp from db")
 	row, err := db.Query("SELECT StartDate FROM sp ORDER BY ID DESC LIMIT 1;")
+
 	if err != nil {
 		return err
 	}
 
 	var ts time.Time
+
 	for row.Next() {
 		err = row.Scan(&ts)
 		if err != nil {
@@ -78,6 +82,9 @@ func updateDB(oauth context.Context, config Config, db *sql.DB) (err error) {
 	if ts == t {
 		ts, _ = time.Parse("1/2/2006 15:04:05", "1/1/1970 12:00:00")
 	}
+
+	log.Printf("most recent activity in db: %s", ts)
+	log.Printf("fetching activities from Strava")
 
 	// strava api after function expects int
 	timestamp := int(ts.Unix())
@@ -94,7 +101,6 @@ func updateDB(oauth context.Context, config Config, db *sql.DB) (err error) {
 	activities, _, err := client.ActivitiesApi.GetLoggedInAthleteActivities(oauth, opts)
 
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
@@ -106,11 +112,14 @@ func updateDB(oauth context.Context, config Config, db *sql.DB) (err error) {
 			opts := &strava.GetActivityByIdOpts{
 				IncludeAllEfforts: optional.NewBool(true),
 			}
+
 			a, _, err := client.ActivitiesApi.GetActivityById(oauth, v.Id, opts)
+
 			if err != nil {
 				return err
 			}
 
+			log.Printf("adding activity: %s", a.Name)
 			statement, err := db.Prepare("INSERT OR IGNORE INTO sp (Name, Distance, MovingTime, ElapsedTime, TotalElevationGain, Type, StravaID, StartDate, StartDateLocal, Timezone, MapId, MapPolyline, MapSummaryPolyline, AverageSpeed, MaxSpeed, Kilojoules, GearId) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 
 			if err != nil {
@@ -124,6 +133,8 @@ func updateDB(oauth context.Context, config Config, db *sql.DB) (err error) {
 			}
 		}
 	}
+
+	log.Println("update complete")
 
 	return nil
 }

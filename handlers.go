@@ -8,6 +8,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/eholzbach/stravaplot/config"
+	"github.com/eholzbach/stravaplot/data"
 )
 
 type renderData struct {
@@ -18,16 +21,16 @@ type renderData struct {
 }
 
 // renderPage polls strava for new data, updates the local database, and writes a freshly populated static html file for the display handler to server
-func renderPage(oauth context.Context, w http.ResponseWriter, r *http.Request, config Config, db *sql.DB) {
+func renderPage(oauth context.Context, w http.ResponseWriter, r *http.Request, config config.Config, db *sql.DB) {
 	// update db with latest info
-	err := updateDB(oauth, config, db)
+	err := data.UpdateDB(oauth, config, db)
 	if err != nil {
 		log.Print("error updating db: ", err)
 		return
 	}
 
 	// get polylines from db
-	pl, err := getPolylines(config, db)
+	pl, err := data.GetPolylines(config, db)
 	if err != nil {
 		log.Print("error querying db: ", err)
 		return
