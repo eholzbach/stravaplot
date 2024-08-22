@@ -18,27 +18,25 @@ type Config struct {
 	Zoom         string
 }
 
+// C represent parsed config data
+var C = Config{}
+
 // GetConfig reads a json configuration file and returns type Config
-func GetConfig(cpath string) (Config, error) {
-	c := Config{}
+func GetConfig(cpath string) error {
+	var (
+		err  error
+		file *os.File
+	)
 
-	// open config file
-	file, err := os.Open(cpath)
-
-	if err != nil {
-		return c, err
+	if file, err = os.Open(cpath); err != nil {
+		return err
 	}
 
 	defer file.Close()
 
-	// decode json
-	d := json.NewDecoder(file)
-
-	if err = d.Decode(&c); err != nil {
-		return c, err
+	if err = json.NewDecoder(file).Decode(&C); err != nil {
+		return err
 	}
-
 	file.Close()
-
-	return c, err
+	return nil
 }

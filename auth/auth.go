@@ -27,12 +27,20 @@ func Auth(parentCtx context.Context, oauth2ContextType fmt.Stringer, id string, 
 		ClientID:     id,
 		ClientSecret: secret,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://www.strava.com/oauth/authorize",
-			TokenURL: "https://www.strava.com/oauth/token",
+			AuthURL:  "https://www.strava.com/api/v3/oauth/authorize",
+			TokenURL: "https://www.strava.com/api/v3/oauth/token",
 		},
 		Scopes: []string{"read,activity:read_all"},
 	}
-	tok := getOAuthToken(parentCtx, c)
+	tok := getOAuthToken(parentCtx, &oauth2.Config{
+		ClientID:     id,
+		ClientSecret: secret,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "https://www.strava.com/api/v3/oauth/authorize",
+			TokenURL: "https://www.strava.com/api/v3/oauth/token",
+		},
+		Scopes: []string{"read,activity:read_all"},
+	})
 	tokSource := c.TokenSource(parentCtx, tok)
 	oauthCtx := context.WithValue(parentCtx, oauth2ContextType, tokSource)
 	return oauthCtx, nil
