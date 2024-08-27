@@ -1,3 +1,5 @@
+// Package auth provides oauth2
+// contains copypasta from github.com/srabraham/strava-oauth-helper
 package auth
 
 import (
@@ -5,7 +7,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"hash/fnv"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -19,10 +20,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// Oauth2 is mostly copypasta from github.com/srabraham/strava-oauth-helper
-
-// auth authenticates to strava with oauth2
-func Auth(parentCtx context.Context, oauth2ContextType fmt.Stringer, id string, secret string) (context.Context, error) {
+// Auth authenticates to strava with oauth2
+func Auth(ctx context.Context, oauth2ContextType fmt.Stringer, id string, secret string) (context.Context, error) {
 	c := &oauth2.Config{
 		ClientID:     id,
 		ClientSecret: secret,
@@ -32,7 +31,8 @@ func Auth(parentCtx context.Context, oauth2ContextType fmt.Stringer, id string, 
 		},
 		Scopes: []string{"read,activity:read_all"},
 	}
-	tok := getOAuthToken(parentCtx, &oauth2.Config{
+
+	tokSource := c.TokenSource(ctx, getOAuthToken(ctx, &oauth2.Config{
 		ClientID:     id,
 		ClientSecret: secret,
 		Endpoint: oauth2.Endpoint{
@@ -40,21 +40,22 @@ func Auth(parentCtx context.Context, oauth2ContextType fmt.Stringer, id string, 
 			TokenURL: "https://www.strava.com/api/v3/oauth/token",
 		},
 		Scopes: []string{"read,activity:read_all"},
-	})
-	tokSource := c.TokenSource(parentCtx, tok)
-	oauthCtx := context.WithValue(parentCtx, oauth2ContextType, tokSource)
-	return oauthCtx, nil
+	}))
+	return context.WithValue(ctx, oauth2ContextType, tokSource), nil
 }
 
 // osUserCacheDir creates directory to store oauth token data
 func osUserCacheDir() string {
-	cacheDir, err := os.UserCacheDir()
-	if err != nil {
-		log.Fatalf("Error getting UserCacheDir: %v", err)
+	var (
+		cacheDir string
+		err      error
+	)
+	if cacheDir, err = os.UserCacheDir(); err != nil {
+		log.Fatalf("error getting token cache: %v", err)
 	}
 	subDir := filepath.Join(cacheDir, "OAuthTokens")
-	if err := os.MkdirAll(subDir, 0770); err != nil {
-		log.Fatalf("Failed getting or making cache dir: %v", err)
+	if err = os.MkdirAll(subDir, 0770); err != nil {
+		log.Fatalf("failed i/o on cache directory: %v", err)
 	}
 	return subDir
 }
@@ -64,68 +65,77 @@ func tokenCacheFile(config *oauth2.Config) string {
 	hash.Write([]byte(config.ClientID))
 	hash.Write([]byte(config.ClientSecret))
 	hash.Write([]byte(strings.Join(config.Scopes, " ")))
-	fn := fmt.Sprintf("%s%v", "strava-auth-tok", hash.Sum32())
-	return filepath.Join(osUserCacheDir(), url.QueryEscape(fn))
+	return filepath.Join(osUserCacheDir(), url.QueryEscape(fmt.Sprintf("%s%v", "strava-auth-tok", hash.Sum32())))
 }
 
 // tokenFromFile reads oauth2 token from file
 func tokenFromFile(file string) (*oauth2.Token, error) {
-	f, err := os.Open(file)
-	if err != nil {
+	var (
+		err error
+		f   *os.File
+		t   = new(oauth2.Token)
+	)
+	if f, err = os.Open(file); err != nil {
+		return nil, err
+	} else if err = gob.NewDecoder(f).Decode(t); err != nil {
 		return nil, err
 	}
-	t := new(oauth2.Token)
-	err = gob.NewDecoder(f).Decode(t)
-	return t, err
+	return t, nil
 }
 
 // saveToken saves oauth2 token to file
 func saveToken(file string, token *oauth2.Token) {
 	f, err := os.Create(file)
 	if err != nil {
-		log.Printf("Warning: failed to cache oauth token: %v", err)
+		log.Printf("failed to cache oauth token: %v", err)
 		return
 	}
 	defer f.Close()
 	gob.NewEncoder(f).Encode(token)
+	log.Printf("saved token to %q", file)
 }
 
 // getOAuthToken fetches an oauth2 token from cache
 func getOAuthToken(ctx context.Context, config *oauth2.Config) *oauth2.Token {
-	cacheFile := tokenCacheFile(config)
-	token, err := tokenFromFile(cacheFile)
-	if err != nil {
+	var (
+		cacheFile = tokenCacheFile(config)
+		err       error
+		token     *oauth2.Token
+	)
+	if token, err = tokenFromFile(cacheFile); err != nil {
 		token = tokenFromWeb(ctx, config)
 		saveToken(cacheFile, token)
-		log.Printf("Saved new token %#v to %q", token, cacheFile)
 	} else {
-		log.Printf("Using cached token %#v from %q", token, cacheFile)
+		log.Printf("using cached token from %q", cacheFile)
 	}
 	return token
 }
 
 // tokenFromWeb fetches a new token
 func tokenFromWeb(ctx context.Context, config *oauth2.Config) *oauth2.Token {
-	ch := make(chan string)
-	randState := fmt.Sprintf("st%d", time.Now().UnixNano())
-	ts := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		if req.URL.Path == "/favicon.ico" {
-			http.Error(rw, "", 404)
+	var (
+		ch        = make(chan string)
+		code      string
+		randState = fmt.Sprintf("st%d", time.Now().UnixNano())
+	)
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/favicon.ico" {
+			http.Error(w, "", 404)
+			return
+		} else if r.FormValue("state") != randState {
+			log.Printf("State doesn't match: req = %#v", r)
+			http.Error(w, "", 500)
+			return
+		} else if code = r.FormValue("code"); code == "" {
+			log.Printf("no code")
+			http.Error(w, "", 500)
 			return
 		}
-		if req.FormValue("state") != randState {
-			log.Printf("State doesn't match: req = %#v", req)
-			http.Error(rw, "", 500)
-			return
-		}
-		if code := req.FormValue("code"); code != "" {
-			fmt.Fprintf(rw, "<h1>Success</h1>Authorized.")
-			rw.(http.Flusher).Flush()
-			ch <- code
-			return
-		}
-		log.Printf("no code")
-		http.Error(rw, "", 500)
+
+		fmt.Fprintf(w, "<h1>Success</h1>Authorized.")
+		w.(http.Flusher).Flush()
+		ch <- code
 	}))
 	defer ts.Close()
 
@@ -133,7 +143,7 @@ func tokenFromWeb(ctx context.Context, config *oauth2.Config) *oauth2.Token {
 	authURL := config.AuthCodeURL(randState)
 	go openURL(authURL)
 	log.Printf("Authorize this app at: %s", authURL)
-	code := <-ch
+	code = <-ch
 	log.Printf("Got code: %s", code)
 
 	token, err := config.Exchange(ctx, code)
@@ -145,7 +155,7 @@ func tokenFromWeb(ctx context.Context, config *oauth2.Config) *oauth2.Token {
 
 // openURL uses xdg-utils to spawn a browser window for the user to approve oauth2
 func openURL(url string) {
-	try := []string{"xdg-open", "google-chrome", "open"}
+	try := []string{"xdg-open", "firefox", "open"}
 	for _, bin := range try {
 		err := exec.Command(bin, url).Run()
 		if err == nil {
@@ -159,7 +169,7 @@ func valueOrFileContents(value string, filename string) string {
 	if value != "" {
 		return value
 	}
-	slurp, err := ioutil.ReadFile(filename)
+	slurp, err := os.ReadFile(filename)
 	if err != nil {
 		log.Fatalf("Error reading %q: %v", filename, err)
 	}

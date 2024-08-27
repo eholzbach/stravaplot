@@ -1,13 +1,10 @@
 package db
 
 import (
-	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"time"
 
-	"github.com/antihax/optional"
 	strava "github.com/eholzbach/strava"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -15,6 +12,13 @@ import (
 
 // DB represents a db connection
 var DB *sql.DB
+
+type ctxKey string
+
+const (
+	limitHeader ctxKey = "ratelimit"
+	useHeader   ctxKey = "ratelimituse"
+)
 
 // Connect creates a connection to sqlite db, creates table if it doesn't exist
 func Connect(dbpath string) error {
@@ -59,22 +63,8 @@ func GetPolylines() ([]string, error) {
 	return data, nil
 }
 
-// UpdateDB checks for new strava data and writes it into the database
-func UpdateDB(ctx context.Context) error {
-	var (
-		err error
-		ts  time.Time
-	)
-
-	if ts, err = getLatestFromDB(); err != nil {
-		return err
-	} else if err := updateActivities(ctx, ts); err != nil {
-		return err
-	}
-	return nil
-}
-
-func getLatestFromDB() (time.Time, error) {
+// GetLatestFromDB returns the timestamp of latest ride stored in db and error
+func GetLatestFromDB() (time.Time, error) {
 	var (
 		err       error
 		rows      *sql.Rows
@@ -100,52 +90,8 @@ func getLatestFromDB() (time.Time, error) {
 	return timestamp, nil
 }
 
-/*
-func getStravaActivities(ctx context.Context, ts time.Time) ([]strava.SummaryActivity, error) {
-	var (
-		all    []strava.SummaryActivity
-		client = strava.NewAPIClient(strava.NewConfiguration())
-	)
-
-	for i := int32(1); ; i++ {
-		page, _, err := client.ActivitiesApi.GetLoggedInAthleteActivities(ctx, &strava.ActivitiesApiGetLoggedInAthleteActivitiesOpts{
-			Page:    optional.NewInt32(i),
-			PerPage: optional.NewInt32(100),
-			After:   optional.NewInt32(int32(ts.Unix())),
-		})
-		if err != nil {
-			return all, err
-		}
-
-		all = append(all, page...)
-		if len(page) <= 0 {
-			break
-		}
-	}
-	return all, nil
-}
-*/
-// only bicycles with gps data
-func filterRides(ctx context.Context, activities []strava.SummaryActivity) ([]strava.DetailedActivity, error) {
-	var (
-		client   = strava.NewAPIClient(strava.NewConfiguration())
-		filtered []strava.DetailedActivity
-	)
-	for _, v := range activities {
-		if *v.Type_ == "Ride" && len(v.Map_.SummaryPolyline) > 0 {
-			a, _, err := client.ActivitiesApi.GetActivityById(ctx, v.Id, &strava.ActivitiesApiGetActivityByIdOpts{
-				IncludeAllEfforts: optional.NewBool(true),
-			})
-			if err != nil {
-				return filtered, err
-			}
-			filtered = append(filtered, a)
-		}
-	}
-	return filtered, nil
-}
-
-func insertRides(rides []strava.DetailedActivity) error {
+// InsertRides accepts a slice of type []strava.DetailedActivity and inserts it to the db
+func InsertRides(rides []strava.DetailedActivity) error {
 	insert := "INSERT OR IGNORE INTO sp (Name, Distance, MovingTime, ElapsedTime, TotalElevationGain, Type, StravaID, " +
 		"StartDate, StartDateLocal, Timezone, MapId, MapPolyline, MapSummaryPolyline, AverageSpeed, MaxSpeed, Kilojoules," +
 		"GearId) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
@@ -165,61 +111,3 @@ func insertRides(rides []strava.DetailedActivity) error {
 	}
 	return nil
 }
-
-func updateActivities(ctx context.Context, ts time.Time) error {
-	var (
-		client = strava.NewAPIClient(strava.NewConfiguration())
-	)
-
-	for i := int32(1); ; i++ {
-		page, _, err := client.ActivitiesApi.GetLoggedInAthleteActivities(ctx, &strava.ActivitiesApiGetLoggedInAthleteActivitiesOpts{
-			Page:    optional.NewInt32(i),
-			PerPage: optional.NewInt32(100),
-			After:   optional.NewInt32(int32(ts.Unix())),
-		})
-		if err != nil {
-			return err
-		}
-
-		fmt.Println(i)
-		fmt.Println(len(page))
-		rides, err := filterRides(ctx, page)
-		if err != nil {
-			return err
-		}
-
-		if err := insertRides(rides); err != nil {
-			return err
-		}
-
-		if len(page) <= 0 {
-			break
-		}
-	}
-	return nil
-}
-
-/*
-	for _, v := range activities {
-		// only bicycles with gps data
-		if *v.Type_ == "Ride" && len(v.Map_.SummaryPolyline) > 0 {
-			var a strava.DetailedActivity
-
-			if a, _, err = client.ActivitiesApi.GetActivityById(ctx, v.Id, &strava.ActivitiesApiGetActivityByIdOpts{
-				IncludeAllEfforts: optional.NewBool(true),
-			}); err != nil {
-				return err
-			}
-
-			log.Printf("adding activity: %s", a.Name)
-			if stmt, err = DB.Prepare(insert); err != nil {
-				return err
-			}
-
-			if _, err = stmt.Exec(a.Name, a.Distance, a.MovingTime, a.ElapsedTime, a.TotalElevationGain, a.Type_, a.ExternalId, a.StartDate, a.StartDateLocal,
-				a.Timezone, a.Map_.Id, a.Map_.Polyline, a.Map_.SummaryPolyline, a.AverageSpeed, a.MaxSpeed, a.Kilojoules, a.GearId); err != nil {
-				return err
-			}
-		}
-	}
-*/

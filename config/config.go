@@ -19,7 +19,7 @@ type Config struct {
 }
 
 // C represent parsed config data
-var C = Config{}
+var C Config
 
 // GetConfig reads a json configuration file and returns type Config
 func GetConfig(cpath string) error {
